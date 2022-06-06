@@ -33,6 +33,7 @@ REFLECT_UNDERLYING(TextDocumentSyncKind)
 
 bool didChangeWatchedFiles;
 
+#ifdef NO_PRIVATE_HACK
 struct ServerCap {
   struct SaveOptions {
     bool includeText = false;
@@ -110,6 +111,58 @@ REFLECT_STRUCT(ServerCap, textDocumentSync, hoverProvider, completionProvider,
                documentOnTypeFormattingProvider, renameProvider,
                documentLinkProvider, foldingRangeProvider,
                executeCommandProvider, workspace);
+#else
+struct ServerCap {
+  struct SaveOptions {
+    bool includeText = false;
+  };
+  struct TextDocumentSyncOptions {
+    bool openClose = true;
+    TextDocumentSyncKind change = TextDocumentSyncKind::Incremental;
+    bool willSave = false;
+    bool willSaveWaitUntil = false;
+    SaveOptions save;
+  } textDocumentSync;
+  bool declarationProvider = true;
+  bool definitionProvider = true;
+  bool typeDefinitionProvider = true;
+  bool implementationProvider = true;
+  bool referencesProvider = true;
+  bool documentSymbolProvider = true;
+  bool workspaceSymbolProvider = true;
+  struct CodeLensOptions {
+    bool resolveProvider = false;
+  } codeLensProvider;
+  bool documentFormattingProvider = false;
+  bool documentRangeFormattingProvider = false;
+  bool renameProvider = false;
+  struct DocumentLinkOptions {
+    bool resolveProvider = true;
+  } documentLinkProvider;
+  bool foldingRangeProvider = false;
+  // The server provides execute command support.
+  struct ExecuteCommandOptions {
+    std::vector<const char *> commands = {ccls_xref};
+  } executeCommandProvider;
+  Config::ServerCap::Workspace workspace;
+};
+REFLECT_STRUCT(ServerCap::CodeLensOptions, resolveProvider);
+REFLECT_STRUCT(ServerCap::DocumentLinkOptions, resolveProvider);
+REFLECT_STRUCT(ServerCap::ExecuteCommandOptions, commands);
+REFLECT_STRUCT(ServerCap::SaveOptions, includeText);
+REFLECT_STRUCT(ServerCap::TextDocumentSyncOptions, openClose, change, willSave,
+               willSaveWaitUntil, save);
+REFLECT_STRUCT(ServerCap, textDocumentSync,
+               declarationProvider, definitionProvider,
+               implementationProvider, typeDefinitionProvider,
+               referencesProvider,
+               documentSymbolProvider, workspaceSymbolProvider,
+               codeLensProvider, documentFormattingProvider,
+               documentRangeFormattingProvider,
+               renameProvider,
+               documentLinkProvider, foldingRangeProvider,
+               executeCommandProvider, workspace);
+#endif
 
 struct DynamicReg {
   bool dynamicRegistration = false;
@@ -334,9 +387,11 @@ void do_initialize(MessageHandler *m, InitializeParam &param,
   {
     InitializeResult result;
     auto &c = result.capabilities;
+#ifdef NO_PRIVATE_HACK
     c.documentOnTypeFormattingProvider =
         g_config->capabilities.documentOnTypeFormattingProvider;
     c.foldingRangeProvider = g_config->capabilities.foldingRangeProvider;
+#endif
     c.workspace = g_config->capabilities.workspace;
     reply(result);
   }

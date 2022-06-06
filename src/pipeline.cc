@@ -628,7 +628,9 @@ void mainLoop() {
         PublishDiagnosticParam params;
         params.uri = DocumentUri::fromPath(path);
         params.diagnostics = std::move(diagnostics);
+#ifdef NO_PRIVATE_HACK
         notify("textDocument/publishDiagnostics", params);
+#endif
       },
       [](const RequestId &id) {
         if (id.valid()) {
