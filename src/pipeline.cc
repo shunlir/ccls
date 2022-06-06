@@ -628,7 +628,7 @@ void mainLoop() {
         PublishDiagnosticParam params;
         params.uri = DocumentUri::fromPath(path);
         params.diagnostics = std::move(diagnostics);
-        notify("textDocument/publishDiagnostics", params);
+        // notify("textDocument/publishDiagnostics", params);
       },
       [](const RequestId &id) {
         if (id.valid()) {
